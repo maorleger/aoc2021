@@ -30,17 +30,46 @@ const parseInput: (rawInput: string) => Input = (rawInput: string) => {
   } as Input;
 };
 
+function updateBoards(boards: Board[], number: number) {
+  for (const board of boards) {
+    board.rows.forEach((row, i) => {
+      row.forEach((col, j) => {
+        if (col === number) {
+          board.counts.rows[i]++;
+          board.counts.cols[j]++;
+          // Avoid storing an extra struct by marking
+          // any hits with impossible values (there are no negative numbers)
+          board.rows[i][j] *= -1;
+        }
+      });
+    });
+  }
+}
+
+function calculateScore(winner: Board, number: number) {
+  let sum = 0;
+  winner.rows.forEach((row) => {
+    row.forEach((col) => {
+      if (col >= 0) {
+        // Cells that were never hit will be non-negative
+        sum += col;
+      }
+    });
+  });
+  return sum * number;
+}
+
+const isWinner = (board: Board) =>
+  board.counts.cols.some((col) => col === 5) ||
+  board.counts.rows.some((row) => row === 5);
+
 const part1 = (rawInput: string) => {
   const { numbers, boards } = parseInput(rawInput);
 
   for (const number of numbers) {
     updateBoards(boards, number);
 
-    const winner = boards.find(
-      (board) =>
-        board.counts.cols.some((col) => col === 5) ||
-        board.counts.rows.some((row) => row === 5),
-    );
+    const winner = boards.find(isWinner);
 
     if (winner) {
       return calculateScore(winner, number);
@@ -54,11 +83,7 @@ const part2 = (rawInput: string) => {
   for (const number of numbers) {
     updateBoards(boards, number);
 
-    const remaining = boards.filter(
-      (board) =>
-        board.counts.cols.every((col) => col < 5) &&
-        board.counts.rows.every((row) => row < 5),
-    );
+    const remaining = boards.filter((board) => !isWinner(board));
 
     if (remaining.length === 0 && boards.length === 1) {
       // Final winner was identified
@@ -113,29 +138,3 @@ run({
   },
   trimTestInputs: true,
 });
-function calculateScore(winner: Board, number: number) {
-  let sum = 0;
-  winner.rows.forEach((row) => {
-    row.forEach((col) => {
-      if (col >= 0) {
-        // unmarked
-        sum += col;
-      }
-    });
-  });
-  return sum * number;
-}
-
-function updateBoards(boards: Board[], number: number) {
-  for (const board of boards) {
-    board.rows.forEach((row, i) => {
-      row.forEach((col, j) => {
-        if (col === number) {
-          board.counts.rows[i]++;
-          board.counts.cols[j]++;
-          board.rows[i][j] *= -1;
-        }
-      });
-    });
-  }
-}
