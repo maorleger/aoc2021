@@ -1,78 +1,80 @@
 import run from "aocrunner";
 import { EOL } from "os";
-import _ from "lodash";
+import _, { update } from "lodash";
 
 type Row = [number, number, number, number, number];
-interface Board {
-  rows: [Row, Row, Row, Row, Row];
-  counts: {
-    rows: [number, number, number, number, number];
-    cols: [number, number, number, number, number];
+
+class Board {
+  private rows: Row[];
+  private counts: {
+    rows: Row;
+    cols: Row;
   };
-}
 
-interface Input {
-  numbers: number[];
-  boards: Board[];
-}
+  constructor(rows: Row[]) {
+    this.rows = rows;
+    this.counts = {
+      rows: [0, 0, 0, 0, 0],
+      cols: [0, 0, 0, 0, 0],
+    };
+  }
 
-const parseInput: (rawInput: string) => Input = (rawInput: string) => {
-  const [numbers, ...boards] = rawInput.split(`${EOL}${EOL}`);
-  return {
-    numbers: numbers.split(",").map(_.toInteger),
-    boards: boards.map((board) => {
-      const rows = board.split(EOL);
-      return {
-        rows: rows.map((row) => row.split(/\W+/).map(_.toInteger)),
-        counts: { rows: [0, 0, 0, 0, 0], cols: [0, 0, 0, 0, 0] },
-      };
-    }),
-  } as Input;
-};
-
-function updateBoards(boards: Board[], number: number) {
-  for (const board of boards) {
-    board.rows.forEach((row, i) => {
+  update(value: number) {
+    this.rows.forEach((row, i) => {
       row.forEach((col, j) => {
-        if (col === number) {
-          board.counts.rows[i]++;
-          board.counts.cols[j]++;
+        if (col === value) {
+          this.counts.rows[i]++;
+          this.counts.cols[j]++;
           // Avoid storing an extra struct by marking
           // any hits with impossible values (there are no negative numbers)
-          board.rows[i][j] *= -1;
+          this.rows[i][j] *= -1;
         }
       });
     });
   }
+
+  score() {
+    // sum all positive (unmarked) values (0 is technically unmarked but doesn't add to sum)
+    return _(this.rows)
+      .flatMap((row) => {
+        return row.filter((col) => col > 0);
+      })
+      .sum();
+  }
+
+  isWinner() {
+    return (
+      this.counts.cols.some((col) => col === 5) ||
+      this.counts.rows.some((row) => row === 5)
+    );
+  }
 }
 
-function calculateScore(winner: Board, number: number) {
-  let sum = 0;
-  winner.rows.forEach((row) => {
-    row.forEach((col) => {
-      if (col >= 0) {
-        // Cells that were never hit will be non-negative
-        sum += col;
-      }
-    });
-  });
-  return sum * number;
-}
-
-const isWinner = (board: Board) =>
-  board.counts.cols.some((col) => col === 5) ||
-  board.counts.rows.some((row) => row === 5);
+const parseInput = (rawInput: string) => {
+  const [numbers, ...boards] = rawInput.split(`${EOL}${EOL}`);
+  return {
+    numbers: numbers.split(",").map(_.toInteger),
+    boards: boards.map(
+      (boardValues) =>
+        new Board(
+          boardValues
+            .split(EOL)
+            .map((row) => row.split(/\W+/).map(_.toInteger) as Row),
+        ),
+    ),
+  };
+};
 
 const part1 = (rawInput: string) => {
   const { numbers, boards } = parseInput(rawInput);
 
   for (const number of numbers) {
-    updateBoards(boards, number);
+    boards.forEach((board) => board.update(number));
 
-    const winner = boards.find(isWinner);
+    const winner = boards.find((board) => board.isWinner());
 
     if (winner) {
-      return calculateScore(winner, number);
+      return winner.score() * number;
     }
   }
 };
@@ -81,14 +83,14 @@ const part2 = (rawInput: string) => {
   let { numbers, boards } = parseInput(rawInput);
 
   for (const number of numbers) {
-    updateBoards(boards, number);
+    boards.forEach((board) => board.update(number));
 
-    const remaining = boards.filter((board) => !isWinner(board));
+    const remaining = boards.filter((board) => !board.isWinner());
 
     if (remaining.length === 0 && boards.length === 1) {
       // Final winner was identified
       const winner = boards[0];
-      return calculateScore(winner, number);
+      return winner.score() * number;
     }
 
     // Keep the remaining boards for the next round
