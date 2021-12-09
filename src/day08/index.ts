@@ -40,28 +40,27 @@ function computeOutput(record: {
   const seven = record.signals.find((s) => s.length === 3)!;
   const eight = record.signals.find((s) => s.length === 7)!;
 
-  /**
-   * Remaining:
-   * 3 -> length of 5 & includes 7
-   * 9 -> length of 6 & includes 4
-   * 5 -> length of 5 & 9 includes it
-   * 6 -> length of 6 & includes 5
-   * 2 -> length 5 remaining
-   * 0 -> length of 6 remaining
-   */
-
+  // 3 -> length of 5 & includes 7
   const three = record.signals.find(
     (s) => s.length === 5 && seven.every((d) => s.includes(d)),
   )!;
-
+  // 9 -> length of 6 & includes 4
   const nine = record.signals.find(
     (s) => s.length === 6 && four.every((d) => s.includes(d)),
   )!;
+  // 5 -> length of 5, is _included_ in 9, and is not 3
   const five = record.signals.find(
-    (s) => s.length === 5 && s.every((d) => nine.includes(d)),
+    (s) =>
+      s.length === 5 &&
+      s.every((d) => nine.includes(d)) &&
+      s.some((d) => !three.includes(d)),
   )!;
+  // 6 -> length of 6, includes 5, and is not 9
   const six = record.signals.find(
-    (s) => s.length === 6 && five.every((d) => s.includes(d)),
+    (s) =>
+      s.length === 6 &&
+      five.every((d) => s.includes(d)) &&
+      s.some((d) => !nine.includes(d)),
   )!;
 
   // 2 and 0
@@ -129,5 +128,4 @@ run({
     solution: part2,
   },
   trimTestInputs: true,
-  onlyTests: true,
 });
