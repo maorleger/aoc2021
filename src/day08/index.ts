@@ -1,7 +1,6 @@
 import run from "aocrunner";
 import { EOL } from "os";
 import _ from "lodash";
-import { stringify } from "querystring";
 
 const parseInput = (rawInput: string) =>
   rawInput.split(EOL).map((row) => {
@@ -30,10 +29,7 @@ const part2 = (rawInput: string) => {
   return input.reduce((acc, record) => acc + computeOutput(record), 0);
 };
 
-function computeOutput(record: {
-  signals: string[][];
-  outputs: string[][];
-}): number {
+function computeOutput(record: ReturnType<typeof parseInput>[number]): number {
   // easy ones
   const one = record.signals.find((s) => s.length === 2)!;
   const four = record.signals.find((s) => s.length === 4)!;
