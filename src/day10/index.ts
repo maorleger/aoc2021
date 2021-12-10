@@ -29,38 +29,6 @@ const part1 = (rawInput: string) => {
     .reduce((acc, row) => acc + row);
 };
 
-function completionScore(row: string[]) {
-  let tokenStack = [];
-
-  for (let i = 0; i < row.length; i++) {
-    switch (row[i]) {
-      case "}":
-      case ")":
-      case "]":
-      case ">":
-        tokenStack.pop();
-        break;
-      default:
-        tokenStack.push(row[i]);
-        break;
-    }
-  }
-
-  // Remaining tokens are incomplete
-  let score = 0;
-  const tokens: Record<string, number> = {
-    "(": 1,
-    "[": 2,
-    "{": 3,
-    "<": 4,
-  };
-  while (tokenStack.length > 0) {
-    const tokenPoints = tokenStack.pop()!;
-    score = score * 5 + tokens[tokenPoints]!;
-  }
-  return score;
-}
-
 const part2 = (rawInput: string) => {
   const input = parseInput(rawInput);
   const totals = input
@@ -99,6 +67,38 @@ function validate(row: string[]): ValidationResult {
     }
   }
   return { isValid: true };
+}
+
+function completionScore(row: string[]) {
+  let tokenStack = [];
+
+  for (let i = 0; i < row.length; i++) {
+    switch (row[i]) {
+      case "}":
+      case ")":
+      case "]":
+      case ">":
+        tokenStack.pop();
+        break;
+      default:
+        tokenStack.push(row[i]);
+        break;
+    }
+  }
+
+  // Remaining tokens are incomplete
+  let score = 0;
+  const tokens: Record<string, number> = {
+    "(": 1,
+    "[": 2,
+    "{": 3,
+    "<": 4,
+  };
+  while (tokenStack.length > 0) {
+    const tokenPoints = tokenStack.pop()!;
+    score = score * 5 + tokens[tokenPoints]!;
+  }
+  return score;
 }
 
 const testInput = `
