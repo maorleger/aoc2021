@@ -14,23 +14,19 @@ const parseInput = (rawInput: string) =>
 
 const part1 = (rawInput: string) => {
   const input = parseInput(rawInput);
-  return dfs("start", input, new Set<string>(), {
-    multipleVisitsAllowed: false,
-  });
+  return dfs("start", input, new Set<string>(), false);
 };
 
 const part2 = (rawInput: string) => {
   const input = parseInput(rawInput);
-  return dfs("start", input, new Set<string>(), {
-    multipleVisitsAllowed: true,
-  });
+  return dfs("start", input, new Set<string>(), true);
 };
 
 function dfs(
   node: string,
   graph: ReturnType<typeof parseInput>,
   seen: Set<string>,
-  rules: { multipleVisitsAllowed: boolean },
+  allowMultipleVisits: boolean,
 ) {
   seen = new Set(seen);
   seen.add(node);
@@ -47,15 +43,13 @@ function dfs(
     if (seen.has(neighbor)) {
       if (neighbor === "end" || neighbor.toUpperCase() === neighbor) {
         // unlimited visits
-        pathCount += dfs(neighbor, graph, seen, rules);
-      } else if (rules.multipleVisitsAllowed) {
+        pathCount += dfs(neighbor, graph, seen, allowMultipleVisits);
+      } else if (allowMultipleVisits) {
         // Use our one double-visit pass
-        pathCount += dfs(neighbor, graph, seen, {
-          multipleVisitsAllowed: false,
-        });
+        pathCount += dfs(neighbor, graph, seen, false);
       }
     } else {
-      pathCount += dfs(neighbor, graph, seen, rules);
+      pathCount += dfs(neighbor, graph, seen, allowMultipleVisits);
     }
   }
   return pathCount;
