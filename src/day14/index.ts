@@ -14,31 +14,60 @@ const parseInput = (rawInput: string) => {
   };
 };
 
-const part1 = (rawInput: string) => {
-  let { template, rules } = parseInput(rawInput);
+const part1 = (rawInput: string) => calculateAnswer(parseInput(rawInput), 10);
+const part2 = (rawInput: string) => calculateAnswer(parseInput(rawInput), 40);
 
-  _.times(10, () => {
-    template = applyRules(template, rules);
+function calculateAnswer(input: ReturnType<typeof parseInput>, steps: number) {
+  let { template, rules } = input;
+  let pairCounts: Record<string, number> = {};
+  let letterCounts: Record<string, number> = {};
+
+  for (const pair of eachCons(template)) {
+    pairCounts[pair] ||= 0;
+    pairCounts[pair]++;
+  }
+
+  for (const letter of template) {
+    letterCounts[letter] ||= 0;
+    letterCounts[letter]++;
+  }
+
+  _.times(steps, () => {
+    pairCounts = applyRules(pairCounts, letterCounts, rules);
   });
 
-  const counts = Object.values(_.countBy(template, _.identity));
+  const finalCounts = Object.values(letterCounts);
+  return Math.max(...finalCounts) - Math.min(...finalCounts);
+}
 
-  return _.max(counts)! - _.min(counts)!;
-};
+function applyRules(
+  pairCounts: Record<string, number>,
+  letterCounts: Record<string, number>,
+  rules: Record<string, string>,
+) {
+  const newPairCounts: typeof pairCounts = {};
+  // Naive solution ran out of space of course
+  // Had to ask the audience (aka reddit) on this one
+  // but the hint was: it's just like lanternfish!
+  // Then it was just figuring out the details
+  for (const pairKey in pairCounts) {
+    if (rules[pairKey]) {
+      const [a, b] = pairKey;
+      const newChar = rules[pairKey];
+      newPairCounts[`${a}${newChar}`] ||= 0;
+      newPairCounts[`${a}${newChar}`] += pairCounts[pairKey];
+      newPairCounts[`${newChar}${b}`] ||= 0;
+      newPairCounts[`${newChar}${b}`] += pairCounts[pairKey];
 
-const part2 = (rawInput: string) => {};
-
-function applyRules(template: string, rules: Record<string, string>): string {
-  let returnVal: string = "";
-
-  for (let i = 0; i < template.length; i++) {
-    returnVal += template[i];
-    const ruleKey = `${template.slice(i, i + 2)}`;
-    if (rules[ruleKey]) {
-      returnVal += rules[ruleKey];
+      letterCounts[rules[pairKey]] ||= 0;
+      letterCounts[rules[pairKey]] += pairCounts[pairKey];
     }
   }
-  return returnVal;
+  return newPairCounts;
+}
+
+function* eachCons(input: string) {
+  for (let i = 0; i <= input.length - 2; i++) yield input.slice(i, i + 2);
 }
 
 const testInput = `NNCB
@@ -66,7 +95,7 @@ run({
     solution: part1,
   },
   part2: {
-    // tests: [{ input: testInput, expected: 2188189693529 }],
+    tests: [{ input: testInput, expected: 2188189693529 }],
     solution: part2,
   },
   trimTestInputs: true,
