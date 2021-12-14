@@ -14,26 +14,23 @@ const parseInput = (rawInput: string) => {
   };
 };
 
-const part1 = (rawInput: string) => calculateAnswer(parseInput(rawInput), 10);
-const part2 = (rawInput: string) => calculateAnswer(parseInput(rawInput), 40);
+const part1 = (rawInput: string) => calculateAnswer(rawInput, 10);
+const part2 = (rawInput: string) => calculateAnswer(rawInput, 40);
 
-function calculateAnswer(input: ReturnType<typeof parseInput>, steps: number) {
+function calculateAnswer(rawInput: string, steps: number) {
+  const input = parseInput(rawInput);
   let { template, rules } = input;
-  let pairCounts: Record<string, number> = {};
-  let letterCounts: Record<string, number> = {};
-
-  for (const pair of eachCons(template)) {
-    pairCounts[pair] ||= 0;
-    pairCounts[pair]++;
-  }
-
-  for (const letter of template) {
-    letterCounts[letter] ||= 0;
-    letterCounts[letter]++;
-  }
+  let pairCounts = _.countBy(initialPairs(template));
+  let letterCounts = _.countBy(template);
 
   _.times(steps, () => {
-    pairCounts = applyRules(pairCounts, letterCounts, rules);
+    const { newLetterCounts, newPairCounts } = applyRules(
+      pairCounts,
+      letterCounts,
+      rules,
+    );
+    pairCounts = newPairCounts;
+    letterCounts = newLetterCounts;
   });
 
   const finalCounts = Object.values(letterCounts);
@@ -46,10 +43,7 @@ function applyRules(
   rules: Record<string, string>,
 ) {
   const newPairCounts: typeof pairCounts = {};
-  // Naive solution ran out of space of course
-  // Had to ask the audience (aka reddit) on this one
-  // but the hint was: it's just like lanternfish!
-  // Then it was just figuring out the details
+  const newLetterCounts = { ...letterCounts };
   for (const pairKey in pairCounts) {
     if (rules[pairKey]) {
       const [a, b] = pairKey;
@@ -59,15 +53,19 @@ function applyRules(
       newPairCounts[`${newChar}${b}`] ||= 0;
       newPairCounts[`${newChar}${b}`] += pairCounts[pairKey];
 
-      letterCounts[rules[pairKey]] ||= 0;
-      letterCounts[rules[pairKey]] += pairCounts[pairKey];
+      newLetterCounts[rules[pairKey]] ||= 0;
+      newLetterCounts[rules[pairKey]] += pairCounts[pairKey];
     }
   }
-  return newPairCounts;
+  return { newPairCounts, newLetterCounts };
 }
 
-function* eachCons(input: string) {
-  for (let i = 0; i <= input.length - 2; i++) yield input.slice(i, i + 2);
+function initialPairs(input: string) {
+  const result = [];
+  for (let i = 0; i <= input.length - 2; i++) {
+    result.push(input.slice(i, i + 2));
+  }
+  return result;
 }
 
 const testInput = `NNCB
